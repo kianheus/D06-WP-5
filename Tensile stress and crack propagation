@@ -1,4 +1,4 @@
-''' This script calculates the deflection and twist of a wing box cross section'''
+''' This script calculates the stresses in a wing box'''
 # Keeping time and imports ------------------------------------------------------------------
 import time
 start_time = time.time()
@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import scipy as sp
 from scipy import interpolate
 from scipy import integrate
-from decimal import Decimal
 
 # Inputs ------------------------------------------------------------------------------------
 
@@ -39,7 +38,7 @@ E = 72 * 10**9              # E-modulus of material [Pa]
 G = 27 * 10**9              # G-modulus of material [Pa]
 rho = 2660                  # Density of material   [kg/m^3]
 sigma_yield = 60 * ksi      # Yield stress          [Pa]
-k1c = 30*10**6              # Fracture toughness    [N/m^1.5]
+k1c = 40*10**6              # Fracture toughness    [N/m^1.5]
 
 # Thickness and area design choices                 [FILLERS]
 t_sheet_spar = 0.002        # Spar thickness        [m]
@@ -255,6 +254,7 @@ M = getMomentDistr(Ldistr, n)
 sigma_top = M * (z_I-z_n) / I
 sigma_bot = M * (z_III-z_n) / I
 m_s_bot = sigma_yield / sigma_bot           # Margin of safety  [-]
+m_s_top = sigma_yield / sigma_top
 
 # Crack induced stress
 sigma_a = k1c / math.sqrt(2*math.pi*cracksize)
@@ -267,34 +267,47 @@ print("The maximum stress is", "{:.2e}".format(max(sigma_bot)), "[Pa]")
 print("Calculations took %s seconds." % round((time.time() - start_time), 2))
 print("The maximum allowed stress due to cracks is", "{:.2e}".format(sigma_a), "[Pa]")
 
+key = input("Press enter for graphs")
 
-# MOI and stress plots
-plt.subplot(221)
-plt.title("Moment of inertia along the wing span")
+if n > 0:
+    plt.plot(y, m_s_bot)
+
+if n < 0:
+    plt.plot(y, m_s_top)
+
+plt.ylabel("Margin of safety [-]")
 plt.xlabel("Span [m]")
-plt.ylabel("MOI [m^4]")
-plt.plot(y, I)
-
-plt.subplot(222)
-plt.title("Stress distribution along the wing span")
-plt.xlabel("Span [m]")
-plt.ylabel("Stress [Pa]")
-plt.plot(y, sigma_bot)
-
-plt.subplot(223)
-plt.title("Moment distribution along the wing span")
-plt.xlabel("Span [m]")
-plt.ylabel("Moment [Nm]")
-plt.plot(y, M)
-
-plt.subplot(224)
 plt.title("Margin of safety along the wing span")
-plt.xlabel("Span [m]")
-plt.ylabel("Margin [-]")
 plt.ylim(0, 5)
-plt.plot(y, m_s_bot)
-
-fig = plt.gcf()
-fig.set_size_inches(12, 8)
-#fig.savefig('DES3_I_J.png', dpi=100)
 plt.show()
+
+## #MOI and stress plots
+##plt.subplot(221)
+##plt.title("Moment of inertia along the wing span")
+##plt.xlabel("Span [m]")
+##plt.ylabel("MOI [m^4]")
+##plt.plot(y, I)
+##
+##plt.subplot(222)
+##plt.title("Stress distribution along the wing span")
+##plt.xlabel("Span [m]")
+##plt.ylabel("Stress [Pa]")
+##plt.plot(y, sigma_bot)
+##
+##plt.subplot(223)
+##plt.title("Moment distribution along the wing span")
+##plt.xlabel("Span [m]")
+##plt.ylabel("Moment [Nm]")
+##plt.plot(y, M)
+##
+##plt.subplot(224)
+##plt.title("Margin of safety along the wing span")
+##plt.xlabel("Span [m]")
+##plt.ylabel("Margin [-]")
+##plt.ylim(0, 5)
+##plt.plot(y, m_s_bot)
+
+##fig = plt.gcf()
+##fig.set_size_inches(12, 8)
+##fig.savefig('DES3_I_J.png', dpi=100)
+##plt.show()
