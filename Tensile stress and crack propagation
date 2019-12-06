@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import scipy as sp
 from scipy import interpolate
 from scipy import integrate
+from decimal import Decimal
 
 # Inputs ------------------------------------------------------------------------------------
 
@@ -27,6 +28,7 @@ T_engine = 21244            # Engine thrust         [N]
 V = 228.31                  # Max speed             [m/s]
 
 n = 3.75                    # Load factor           [-]
+cracksize = 0.005           # Maximum crack size    [m]
 
 # --------------------
 # ---DESIGN CHOICES---
@@ -37,6 +39,7 @@ E = 72 * 10**9              # E-modulus of material [Pa]
 G = 27 * 10**9              # G-modulus of material [Pa]
 rho = 2660                  # Density of material   [kg/m^3]
 sigma_yield = 60 * ksi      # Yield stress          [Pa]
+k1c = 30*10**6              # Fracture toughness    [N/m^1.5]
 
 # Thickness and area design choices                 [FILLERS]
 t_sheet_spar = 0.002        # Spar thickness        [m]
@@ -248,9 +251,13 @@ M = getMomentDistr(Ldistr, n)
 
 # Stress calculations -----------------------------------------------------------------------
 
+# Moment induced stress
 sigma_top = M * (z_I-z_n) / I
 sigma_bot = M * (z_III-z_n) / I
 m_s_bot = sigma_yield / sigma_bot           # Margin of safety  [-]
+
+# Crack induced stress
+sigma_a = k1c / math.sqrt(2*math.pi*cracksize)
 
 # Statistics --------------------------------------------------------------------------------
 
@@ -258,6 +265,8 @@ print(' ')
 print('The wing box mass (half span) is', round(Mass, 2),'[kg]')
 print("The maximum stress is", "{:.2e}".format(max(sigma_bot)), "[Pa]")
 print("Calculations took %s seconds." % round((time.time() - start_time), 2))
+print("The maximum allowed stress due to cracks is", "{:.2e}".format(sigma_a), "[Pa]")
+
 
 # MOI and stress plots
 plt.subplot(221)
