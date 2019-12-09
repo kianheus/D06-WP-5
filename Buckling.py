@@ -383,13 +383,18 @@ T = getTorsionDistribution(Ldistr, Mdistr, rho, V, T_engine, n)
 # Retrieving -M/EI
 MEI = M/(E*I)
 
-# First integration
-MEIfunc = sp.interpolate.interp1d(y,MEI,kind='cubic',fill_value='extrapolate')
+#First integration
+dy = step
 dvdylst = []
 
-for i in range(n_iterations):
-    dvdy = sp.integrate.quad(MEIfunc, ylst[i], (b/2))
-    dvdylst.append(dvdy[0])
+for n in range(n_points):
+    totarea = 0
+    
+    for i in range(n):
+        bararea = MEI[i] * dy
+        totarea += bararea
+
+    dvdylst.append(totarea)
 
 dvdy = np.array(dvdylst)
 
@@ -398,13 +403,18 @@ C_1 = -dvdy[0]
 dvdy += C_1
 
 print('First integration done')
+
 # Second integration
-dvdyfunc = sp.interpolate.interp1d(y,dvdy,kind='cubic',fill_value='extrapolate')
 vlst = []
 
-for i in range(n_iterations):
-    v = sp.integrate.quad(dvdyfunc, ylst[i], (b/2))
-    vlst.append(v[0])
+for n in range(n_points):
+    totarea = 0
+    
+    for i in range(n):
+        bararea = dvdy[i] * dy
+        totarea += bararea
+
+    vlst.append(totarea)
 
 v = np.array(vlst)
 
@@ -420,12 +430,16 @@ print('Second integration done')
 TGJ = T/(G*J)
 
 # Integration
-TGJfunc = sp.interpolate.interp1d(y,TGJ,kind='cubic',fill_value='extrapolate')
 philst = []
 
-for i in range(n_iterations):
-    phi = sp.integrate.quad(TGJfunc, ylst[i], (b/2))
-    philst.append(phi[0])
+for n in range(n_points):
+    totarea = 0
+    
+    for i in range(n):
+        bararea = TGJ[i] * dy
+        totarea += bararea
+
+    philst.append(totarea)
 
 phi = np.array(philst)
 
