@@ -12,6 +12,8 @@ from scipy import integrate
 
 # Inputs ------------------------------------------------------------------------------------
 
+# Units
+ksi = 6.895 * 10 ** 6       # ksi to Pa
 
 # Given by the previous iterations
 C_r = round(3.695625413,4)           # Root chord            [m]
@@ -23,6 +25,7 @@ h_frontspar = 0.0908        # Front spar height     [%]
 h_rearspar = 0.0804         # Rear spar height      [%]
 T_engine = 21244            # Engine thrust         [N] FILLER
 V = 228.31                  # Max speed             [m/s]
+cracksize = 0.005           # Maximum crack size    [m]
 
 n = 2.5 * 1.5               # Load factor           [-]
 
@@ -34,6 +37,8 @@ n = 2.5 * 1.5               # Load factor           [-]
 E = 72 * 10**9              # E-modulus of material [Pa]
 G = 27 * 10**9              # G-modulus of material [Pa]
 rho = 2660                  # Density of material   [kg/m^3]
+sigma_yield = 60 * ksi      # Yield stress          [Pa]
+k1c = 40*10**6              # Fracture toughness    [N/m^1.5]
 
 # Thickness and area design choices                 [FILLERS]
 t_sheet_spar = 0.0005       # Spar thickness        [m]
