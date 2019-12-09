@@ -538,5 +538,5 @@ plt.plot(y, m_s_bot)
 
 fig = plt.gcf()
 fig.set_size_inches(12, 8)
-fig.savefig('DES3_I_J.png', dpi=100)
+#fig.savefig('DES3_I_J.png', dpi=100)
 plt.show()
