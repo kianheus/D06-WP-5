@@ -52,7 +52,38 @@ t_stringer = 0.002          # Thickness stringer [m]
 h_stringer = 0.05           # Height of stringer [m]
 w_sides_stringer = 0.01     # Width of the sides of the stringer [m]
 w_top_side_stringer = 0.05  # Width of the top side of the stringer [m]
+
+# Area stringer
 A_str = t_stringer*(2*h_stringer + 2*w_sides_stringer + w_top_side_stringer)-4*t_stringer*t_stringer      # Area of a stringer [m^2]
+
+# ------------- Moment of inertia hat stringer ------------
+# Centroid stringer
+y_NA_stringer = (2*(w_sides_stringer*t_stringer*t_stringer/2)+2*(h_stringer*t_stringer*(h_stringer/2+t_stringer))+
+                 w_top_side_stringer*t_stringer*(t_stringer+t_stringer/2+h_stringer))/(2*w_sides_stringer*t_stringer+
+                                                                                       2*h_stringer*t_stringer+w_top_side_stringer*t_stringer)
+
+# Ixx around the stringer's NA
+
+Ixx_stringer = 2*(1/12*t_stringer**3*w_sides_stringer + t_stringer*w_sides_stringer*abs(y_NA_stringer-t_stringer/2)) \
+               + 2*(1/12*h_stringer**3*t_stringer + h_stringer*t_stringer*abs(y_NA_stringer-(h_stringer/2+t_stringer))) + \
+               1/12*t_stringer**3*w_top_side_stringer + t_stringer*w_top_side_stringer*abs(t_stringer+h_stringer+t_stringer/2-y_NA_stringer)
+
+# ------------------- Neutral axis wing box -------------------------
+# Design choices                 [FILLERS]
+t_sheet_spar = 0.0005       # Spar thickness        [m]
+t_sheet_hor = 0.0085        # Horizontal sheets thickness [m]
+h_spar = 0.3                # Height spars [m]
+w_sheet = 1                 # Width of the top and bottom sheets (without thickness of spars)
+n_stringer_top = 4          # Number of stringers in the bottom sheet
+n_stringer_bottom = 1       # Number of stringers in the bottom sheet
+
+y_NA_wing_box = (w_sheet*t_sheet_hor*t_sheet_hor/2+w_sheet*t_sheet_hor*(h_spar-t_sheet_hor/2)+2*h_spar*t_sheet_spar*h_spar/2 + \
+                 n_stringer_top*A_str*(t_sheet_hor+y_NA_stringer)+n_stringer_bottom*A_str*(h_spar-(t_sheet_hor+y_NA_stringer)))/ \
+                (2*w_sheet*t_sheet_hor+2*h_spar*t_sheet_spar+(n_stringer_bottom+n_stringer_bottom)*A_str)
+
+# Moment of inertia of the wing box
+
+
 
 # Stringers design choices                          [FILLERS]
 ''' To insert stringers on your desired location, you first set the intervals at which
