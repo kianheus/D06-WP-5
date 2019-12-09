@@ -459,7 +459,24 @@ C_3 = -phi[0]
 phi += C_3
 print('Twist integration done')
 
+# Stress calculations -----------------------------------------------------------------------
+
+
+# Moment induced stress
+sigma_top = M * (z_I-z_n) / I
+sigma_bot = M * (z_III-z_n) / I
+m_s_bot = sigma_yield / sigma_bot           # Margin of safety  [-]
+m_s_top = sigma_yield / sigma_top
+
+# Crack induced stress
+sigma_a = k1c / math.sqrt(2*math.pi*cracksize)
+sigma_a = np.full(n_points, sigma_a)
+m_s_sigma_a_bot = sigma_a / sigma_bot
+m_s_sigma_a_top = sigma_a / sigma_top
+
 # Statistics --------------------------------------------------------------------------------
+
+
 v_max = np.amax(abs(v))
 v_percentage = v_max/b * 100
 phi_max = (np.amax(abs(phi)) * 180 / math.pi)
@@ -469,6 +486,25 @@ print('The wing box mass (half span) is', round(Mass, 2),'[kg]')
 print('The maximum deflection is', round(v_max, 4), '[m] or', round(v_percentage, 3), '[%] of the span.')
 print('The maximum twist is', round(phi_max, 4),'[deg]')
 print("Calculations took %s seconds." % round((time.time() - start_time), 2))
+
+# Determining the tension side
+if n > 0:
+    m_s = m_s_bot
+    m_s_sigma_a = m_s_sigma_a_bot
+
+if n < 0:
+    m_s = m_s_top
+    m_s_sigma_a = m_s_sigma_a_top
+
+
+plt.plot(y, m_s, 'b', y, m_s_sigma_a, 'r')
+plt.ylabel("Margin of safety [-]")
+plt.xlabel("Span [m]")
+plt.title("Margin of safety along the wing span")
+plt.ylim(0, 5)
+plt.show()
+
+# Rest of the plots
 plt.subplot(221)
 plt.plot(y, v)
 plt.subplot(222)
