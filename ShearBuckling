@@ -4,7 +4,7 @@ import time
 
 start_time = time.time()
 
-from math import *
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
@@ -450,7 +450,7 @@ def getMomentDistr(Ldistr, loadfactor):
     for n in range(npoints + 1):
         ytab.append(n)
 
-    return moment_internal_distr
+    return moment_internal_distr, shear_internal_distr
 
 
 # Torsion distribution function -------------------------------------------------------------
@@ -563,8 +563,9 @@ print('J done')
 
 # Moment and torque functions ---------------------------------------------------------------
 
-M = getMomentDistr(Ldistr, n)
-T = getTorsionDistribution(Ldistr, Mdistr, rho, V, T_engine, n)
+M = getMomentDistr(Ldistr, n)[0]                                    # Moment list
+T = getTorsionDistribution(Ldistr, Mdistr, rho, V, T_engine, n)     # Torsion list
+V = getMomentDistr(Ldistr, n)[1]                                    # Shear list
 
 # Calculating deflection --------------------------------------------------------------------
 n_points = len(Ldistr)
@@ -677,13 +678,13 @@ for i in range(n_rectangles):
     y = i*ai + ai/2
     abratio = ai/height_spar(y)
     abratiolst.append(abratio)
-print(abratiolst)
+
 # ks - Shear buckling coefficient
-ks = 5
+ks = 7.5    # From graph
 
 # Critical shear strees
 def tau_crit(y):
-    tau_crit = pi**2*ks*E * (t_sheet_spar/height_spar(y))**2 / (12*(1-poisson_ratio**2))
+    tau_crit = math.pi**2*ks*E * (t_sheet_spar/height_spar(y))**2 / (12*(1-poisson_ratio**2))
     return tau_crit
 
 # Actual shear stress
@@ -697,7 +698,7 @@ ShearStressCheck = []
 for n in range(n_points):
 
     y = n * (b/2)/n_points
-    ratio_tau = tau_crit(y, n)/tau_i(y, n)
+    ratio_tau = tau_crit(y)/tau_i(y, n)
     ShearStressCheck.append(ratio_tau)
 
     # Check if ratio enough
