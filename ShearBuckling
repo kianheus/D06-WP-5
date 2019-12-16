@@ -129,10 +129,28 @@ def numberstringersbottom(y):
 # ------------- Moment of inertia ------------------
 
 # Design choices                 [FILLERS]
-t_sheet_spar = 0.005  # Spar thickness        [m]
-t_sheet_hor_top = 0.003  # Top horizontal sheet thickness [m]
-t_sheet_hor_bottom = 0.003  # Top horizontal sheet thickness [m]
+t_sheet_spar_start = 0.005  # Spar thickness start [m]
+t_sheet_spar_end   = 0.003  # Spar thickness end   [m]
+
+t_sheet_hor_top_start = 0.004  # Starting top horizontal sheet thickness [m]
+t_sheet_hor_top_end   = 0.002  # Final top horizontal sheet thickness [m]
+
+t_sheet_hor_bottom_start = 0.003   # Top horizontal sheet thickness [m]
+t_sheet_hor_bottom_end   = 0.0015  # Top horizontal sheet thickness [m]
+
 w_sides_spar = 0.03  # Width side flanges spar [m] (without thickness of spar)
+
+# Thickness top sheet as a function of y
+def t_sheet_hor_top(y):
+    return t_sheet_hor_top_start - y * (t_sheet_hor_top_start - t_sheet_hor_top_end) / (b / 2)
+
+# Thickness bottom sheet as a function of y
+def t_sheet_hor_bottom(y):
+    return t_sheet_hor_bottom_start - y * (t_sheet_hor_bottom_start - t_sheet_hor_bottom_end) / (b / 2)
+
+# Thickness spar as a function of y
+def t_sheet_spar(y):
+    return t_sheet_spar_start - y * (t_sheet_spar_start - t_sheet_spar_end) / (b / 2)
 
 def MomentInertiaWingBox(y):
     # Dimensions as a function of the span
@@ -140,18 +158,18 @@ def MomentInertiaWingBox(y):
     w_sheet = 1.478250 - y * (1.478250 - 0.442847) / (b / 2)
 
     # Neutral axis (Using thin wall assumption)
-    z_NA_wing_box = (2 * (t_sheet_spar * h_spar * h_spar / 2) + numberstringersbottom(y) * A_str * z_NA_stringer +
-                     numberstringerstop(y) * A_str * (h_spar - z_NA_stringer) + w_sheet * t_sheet_hor_top * h_spar) / \
-                    (t_sheet_hor_top * w_sheet + t_sheet_hor_bottom * w_sheet + 2 * h_spar * t_sheet_spar +
-                     4 * t_sheet_spar * w_sides_spar + (numberstringersbottom(y) + numberstringerstop(y)) * A_str)
+    z_NA_wing_box = (2 * (t_sheet_spar(y) * h_spar * h_spar / 2) + numberstringersbottom(y) * A_str * z_NA_stringer +
+                     numberstringerstop(y) * A_str * (h_spar - z_NA_stringer) + w_sheet * t_sheet_hor_top(y) * h_spar) / \
+                    (t_sheet_hor_top(y) * w_sheet + t_sheet_hor_bottom(y) * w_sheet + 2 * h_spar * t_sheet_spar(y) +
+                     4 * t_sheet_spar(y) * w_sides_spar + (numberstringersbottom(y) + numberstringerstop(y)) * A_str)
 
     # Moment of inertia of the wing box
-    Ixx_wing_box = w_sheet * t_sheet_hor_bottom * z_NA_wing_box ** 2 + w_sheet * t_sheet_hor_top * (
+    Ixx_wing_box = w_sheet * t_sheet_hor_bottom(y) * z_NA_wing_box ** 2 + w_sheet * t_sheet_hor_top(y) * (
                 h_spar - z_NA_wing_box) ** 2 + \
-                   2 * (1 / 12 * t_sheet_spar * h_spar ** 3 + w_sides_spar * t_sheet_spar * (
+                   2 * (1 / 12 * t_sheet_spar(y) * h_spar ** 3 + w_sides_spar * t_sheet_spar(y) * (
                 h_spar / 2 - z_NA_wing_box) ** 2) + \
-                   2 * (w_sides_spar * t_sheet_spar * (h_spar - z_NA_wing_box) ** 2) + \
-                   2 * (w_sides_spar * t_sheet_spar * (z_NA_wing_box - h_spar) ** 2) + \
+                   2 * (w_sides_spar * t_sheet_spar(y) * (h_spar - z_NA_wing_box) ** 2) + \
+                   2 * (w_sides_spar * t_sheet_spar(y) * (z_NA_wing_box - h_spar) ** 2) + \
                    numberstringerstop(y) * (Ixx_stringer + A_str * (h_spar - z_NA_stringer - z_NA_wing_box) ** 2) + \
                    numberstringersbottom(y) * (Ixx_stringer + A_str * (z_NA_wing_box - z_NA_stringer) ** 2)
 
@@ -164,8 +182,8 @@ def AreaWingBox(y):
     w_sheet = 1.478250 - y * (1.478250 - 0.442847) / (b / 2)
 
     #Area wing box
-    Area = (t_sheet_hor_top * w_sheet + t_sheet_hor_bottom * w_sheet + 2 * h_spar * t_sheet_spar +
-     4 * t_sheet_spar * w_sides_spar + (numberstringersbottom(y) + numberstringerstop(y)) * A_str)
+    Area = (t_sheet_hor_top(y) * w_sheet + t_sheet_hor_bottom(y) * w_sheet + 2 * h_spar * t_sheet_spar(y) +
+     4 * t_sheet_spar(y) * w_sides_spar + (numberstringersbottom(y) + numberstringerstop(y)) * A_str)
 
     return Area
 
@@ -531,7 +549,6 @@ def getTorsionDistribution(Ldistr, M_distr, rho, V, T, loadfactor):
 
 # Wing box mass (2 * mass of half wing)
 Mass_wingbox = 2 * rho * sp.integrate.quad(AreaWingBox,0,b/2)[0]
-print(Mass_wingbox)
 
 # ---------------------Calculating the torsional constant --------------------------------------------------------
 
@@ -541,7 +558,7 @@ def ds_t(y):
     h_spar = 0.317473 - y * (0.317473 - 0.095107) / (b / 2)
     w_sheet = 1.478250 - y * (1.478250 - 0.442847) / (b / 2)
 
-    ds_t = 2*w_sides_spar/t_sheet_spar + w_sheet/t_sheet_hor_top + w_sheet/t_sheet_hor_bottom
+    ds_t = 2*w_sides_spar/t_sheet_spar(y) + w_sheet/t_sheet_hor_top(y) + w_sheet/t_sheet_hor_bottom(y)
 
     return ds_t
 
@@ -661,10 +678,10 @@ print('Twist integration done')
 # -------------------------------Shear buckling calculations-------------------------------
 
 # Separations between ribs
-ai = 0.6    # [m]
+ai_ribs = 0.6    # [m]
 
 # Number of ribs
-n_rectangles = round((b/2)/ai)
+n_rectangles = round((b/2)/ai_ribs)
 
 # a/b ratio
 def height_spar(y):
@@ -675,21 +692,21 @@ def height_spar(y):
 abratiolst = []
 
 for i in range(n_rectangles):
-    y = i*ai + ai/2
-    abratio = ai/height_spar(y)
+    y = i*ai_ribs + ai_ribs/2
+    abratio = ai_ribs/height_spar(y)
     abratiolst.append(abratio)
 
 # ks - Shear buckling coefficient
 ks = 7.5    # From graph
 
-# Critical shear strees
+# Critical shear stress
 def tau_crit(y):
-    tau_crit = math.pi**2*ks*E * (t_sheet_spar/height_spar(y))**2 / (12*(1-poisson_ratio**2))
+    tau_crit = math.pi**2*ks*E * (t_sheet_spar(y)/height_spar(y))**2 / (12*(1-poisson_ratio**2))
     return tau_crit
 
 # Actual shear stress
 def tau_i(y, i):
-    tau_i = 3*V[i]/(4*height_spar(y)*t_sheet_spar) + T[i]/(2*Am(y)*t_sheet_spar)
+    tau_i = 3*V[i]/(4*height_spar(y)*t_sheet_spar(y)) + T[i]/(2*Am(y)*t_sheet_spar(y))
     return tau_i
 
 
@@ -701,10 +718,33 @@ for n in range(n_points):
     ratio_tau = tau_crit(y)/tau_i(y, n)
     ShearStressCheck.append(ratio_tau)
 
-    # Check if ratio enough
-    if ratio_tau < 1:
-        print("Shear stress too high at y",y)
+    # # Check if ratio enough
+    # if ratio_tau < 1:
+    #     print("Shear stress too high at y",y)
 
+# -------------------------------Compressive buckling calculations-------------------------------
+
+# kc - Compressive buckling coefficient
+kc = 1
+
+# b for the top sheet rectangles
+b_top = 1
+
+# Critical compressive stress
+def sigma_crit(y):
+    sigma_crit = (math.pi)**2*kc*E*(t_sheet_hor_top(y)/b_top)**2 / (12*(1-poisson_ratio**2))
+    return sigma_crit
+
+def sigma_i(y):
+    sigma_i = 1
+    return sigma_i
+
+CompressiveStressCheck = []
+for n in range(n_points):
+
+    y = n * (b/2)/n_points
+    margin_safety_sigma = sigma_crit(y)/sigma_i(y)
+    CompressiveStressCheck.append(margin_safety_sigma)
 
 # Stress calculations -----------------------------------------------------------------------
 
