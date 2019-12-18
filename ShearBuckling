@@ -706,45 +706,99 @@ def tau_crit(y):
 
 # Actual shear stress
 def tau_i(y, i):
-    tau_i = 3*V[i]/(4*height_spar(y)*t_sheet_spar(y)) + T[i]/(2*Am(y)*t_sheet_spar(y))
+    tau_i = abs(3*V[i]/(4*height_spar(y)*t_sheet_spar(y)) + T[i]/(2*Am(y)*t_sheet_spar(y)))
     return tau_i
-
-
-# Check if tau_crit > tau_i
-ShearStressCheck = []
-for n in range(n_points):
-
-    y = n * (b/2)/n_points
-    ratio_tau = tau_crit(y)/tau_i(y, n)
-    ShearStressCheck.append(ratio_tau)
-
-    # # Check if ratio enough
-    # if ratio_tau < 1:
-    #     print("Shear stress too high at y",y)
 
 # -------------------------------Compressive buckling calculations-------------------------------
 
 # kc - Compressive buckling coefficient
-kc = 1
+kc = 5.5
 
-# b for the top sheet rectangles
-b_top = 1
+# b for the top sheet rectangles (Assumed same b for every rectangle at each y position. Check for longest side b, closer to root)
+btoplst = []
+abratiotoplst = []
+
+for i in range(n_rectangles):
+
+    y = i * ai_ribs
+    w_sheet = 1.478250 - y * (1.478250 - 0.442847) / (b / 2)
+
+    b_top = w_sheet/(numberstringerstop(y)-1)
+    btoplst.append(b_top)
+
+    # Check a/b ratio for compression
+    abratiotop = ai_ribs/b_top
+    abratiotoplst.append(abratiotop)
+
 
 # Critical compressive stress
 def sigma_crit(y):
-    sigma_crit = (math.pi)**2*kc*E*(t_sheet_hor_top(y)/b_top)**2 / (12*(1-poisson_ratio**2))
+    rectangleindex = math.floor(y/ai_ribs)  # Get index for rectangle to get b_top from list
+
+    sigma_crit = math.pi**2*kc*E*(t_sheet_hor_top(y)/btoplst[rectangleindex])**2 / (12*(1-poisson_ratio**2))
     return sigma_crit
 
-def sigma_i(y):
-    sigma_i = 1
+def sigma_i(y, n):
+    sigma_i = abs(M[n] * (height_spar(y) - MomentInertiaWingBox(y)[1]) / MomentInertiaWingBox(y)[0])
     return sigma_i
 
-CompressiveStressCheck = []
+# ---------------Bending stress calculations------------------
+
+def sigma_tensile(y, n):
+    sigma_i = abs(M[n] * MomentInertiaWingBox(y)[1] / MomentInertiaWingBox(y)[0])
+    return sigma_i
+
+
+# ---------------------Margins of safety for shear and yield stress, and compression buckling------------------
+ShearStressCheck = []
+TensileCheck = []
+CompressiveBucklingCheck = []
+
 for n in range(n_points):
 
     y = n * (b/2)/n_points
-    margin_safety_sigma = sigma_crit(y)/sigma_i(y)
-    CompressiveStressCheck.append(margin_safety_sigma)
+
+    margin_safety_tau = tau_crit(y)/tau_i(y, n)
+    ShearStressCheck.append(margin_safety_tau)
+
+    margin_safety_sigma_buckling = sigma_crit(y)/sigma_i(y, n)
+    CompressiveBucklingCheck.append(margin_safety_sigma_buckling)
+
+    margin_safety_sigma_yield = sigma_yield/sigma_tensile(y, n)
+    TensileCheck.append(margin_safety_sigma_yield)
+
+# --------------Check margins of safety------------------
+ShearStressFailure = 0
+CompressiveBucklingFailure = 0
+YieldStressFailure = 0
+
+for check in range(len(ShearStressCheck)):
+    if ShearStressCheck[check] < 1:
+        ShearStressFailure = 1
+    if CompressiveBucklingCheck[check] < 1:
+        CompressiveBucklingFailure = 1
+    if TensileCheck[check] < 1:
+        YieldStressFailure = 1
+
+# Check for any failure
+if ShearStressFailure == 1:
+    print("Shear stress failure")
+elif ShearStressFailure == 0:
+    print("Shear strees OK")
+
+if CompressiveBucklingFailure == 1:
+    print("Compression buckling failure")
+if CompressiveBucklingFailure == 0:
+    print("Compression buckling OK")
+
+if YieldStressFailure == 1:
+    print("Tensile stress failure")
+if YieldStressFailure == 0:
+    print("Tensile stress OK")
+
+print(ShearStressCheck)
+print(CompressiveBucklingCheck)
+print(TensileCheck)
 
 # Stress calculations -----------------------------------------------------------------------
 
