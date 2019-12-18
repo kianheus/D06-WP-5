@@ -25,7 +25,7 @@ h_rearspar = 0.0804          # Rear spar height      [%]
 T_engine = 21244             # Engine thrust         [N] FILLER
 V = 228.31                   # Max speed             [m/s]
 
-n = 2.5 * 1.5                # Load factor           [-]
+n = 2.5*1.5                  # Load factor           [-]
 
 # --------------------
 # ---DESIGN CHOICES---
@@ -36,7 +36,7 @@ E = 73.1 * 10 ** 9      # E-modulus of material     [Pa]
 G = 28 * 10 ** 9        # G-modulus of material     [Pa]
 rho = 2780              # Density of material       [kg/m^3]
 poisson_ratio = 0.33    # Poisson ratio of material [-]
-sigma_yield = 330*10**6 # Yield strength            [Pa]
+sigma_yield = 410*10**6 # Yield strength            [Pa]
 k1c = 41 * 10**6        # Fracture toughness        [Pa*m^-1/2]
 cracksize = 0.005       # Maximum crack size        [m]
 
@@ -146,7 +146,7 @@ w_sides_spar = 0.05  # Width side flanges spar [m] (without thickness of spar)
 
 # Thickness top sheet as a function of y
 def t_sheet_hor_top(y):
-    if y <= 1.5:        # Inside fuselage, thick structure
+    if y <= 2:        # Inside fuselage, thick structure
         return 0.01
     if 1.5 < y <= 0.5*(b/2):
         return t_sheet_hor_top_start - y * (t_sheet_hor_top_start - t_sheet_hor_top_middle) / (b / 2)
@@ -155,7 +155,7 @@ def t_sheet_hor_top(y):
 
 # Thickness bottom sheet as a function of y
 def t_sheet_hor_bottom(y):
-    if y <= 1.5:        # Inside fuselage, thick structure
+    if y <= 2:        # Inside fuselage, thick structure
         return 0.01
     if 1.5 < y <= 0.5*(b/2):
         return t_sheet_hor_bottom_start - y * (t_sheet_hor_bottom_start - t_sheet_hor_bottom_middle) / (b / 2)
@@ -898,12 +898,12 @@ for i in range(n_points):
 # Crack induced stress
 
 def m_s_sigma_a_top(y):
-    sigma_a = k1c / math.sqrt(2 * math.pi * cracksize)
+    sigma_a = k1c / math.sqrt(math.pi * cracksize)
     m_s_sigma_a_top = sigma_a / m_s_top(y)[1]
     return m_s_sigma_a_top
 
 def m_s_sigma_a_bot(y):
-    sigma_a = k1c / math.sqrt(2 * math.pi * cracksize)
+    sigma_a = k1c / math.sqrt(math.pi * cracksize)
     m_s_sigma_a_bot = sigma_a / m_s_bot(y)[1]
     return m_s_sigma_a_bot
     
