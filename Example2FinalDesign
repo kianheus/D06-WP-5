@@ -52,8 +52,9 @@ distance_top = np.array([0.6, 1])  # Interval of stringer variance [%span]
 stringers_top = np.array([[0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0], [0.5, 0.5], [0.6, 0], [0.7, 0], [0.8, 0.8], [0.9, 0.9], [1, 1]])
 topstr = sp.interpolate.interp1d(distance_top, stringers_top, kind='next', fill_value='extrapolate')
 
-distance_bot = np.array([0.6, 1])  # Interval of stringer variance [%span]
-stringers_bot = np.array([[0.1, 0.1], [0.2, 0], [0.3, 0], [0.4, 0], [0.55, 0], [0.7, 0], [0.85, 0], [1, 1]])
+distance_bot = np.array([0.25, 0.45, 0.65, 1])  # Interval of stringer variance [%span]
+stringers_bot = np.array([[0.1, 0.1, 0.1, 0], [0.15, 0, 0, 0], [0.2, 0.2, 0, 0], [0.25, 0.25, 0.25, 0], [0.3, 0.3, 0, 0], [0.4, 0.4, 0.4, 0], [0.5, 0.5, 0.5, 0.5], \
+                          [0.6, 0.6, 0, 0], [0.7, 0.7, 0.7, 0], [0.75, 0.75, 0.75, 0], [0.8, 0.8, 0, 0], [0.9, 0.9, 0, 0], [0.95, 0, 0, 0], [1, 1, 1, 1]])
 botstr = sp.interpolate.interp1d(distance_bot, stringers_bot, kind='next', fill_value='extrapolate')
 
 # -----------------Stringer properties as a function of the geometry (hat stringer)-----------------
@@ -65,10 +66,10 @@ botstr = sp.interpolate.interp1d(distance_bot, stringers_bot, kind='next', fill_
 #  <-->
 #  w_sides_stringer
 
-t_stringer = 0.007          # Thickness stringer [m]
-h_stringer = 0.05           # Height of stringer vertical side (excluding thickness from bottom and top plates) [m]
+t_stringer = 0.008          # Thickness stringer [m]
+h_stringer = 0.06           # Height of stringer vertical side (excluding thickness from bottom and top plates) [m]
 w_sides_stringer = 0.01     # Width of the sides of the stringer [m]
-w_top_side_stringer = 0.07  # Width of the top side of the stringer [m]
+w_top_side_stringer = 0.06  # Width of the top side of the stringer [m]
 
 # Area stringer [m^2]
 A_str = t_stringer * (2 * h_stringer + 2 * w_sides_stringer + w_top_side_stringer) - 4 * t_stringer * t_stringer
@@ -142,31 +143,31 @@ t_sheet_hor_bottom_start  = 0.005   # Bottom horizontal sheet thickness start  [
 t_sheet_hor_bottom_middle = 0.004   # Bottom horizontal sheet thickness middle [m]
 t_sheet_hor_bottom_end    = 0.002   # Bottom horizontal sheet thickness end    [m]
 
-w_sides_spar = 0.05  # Width side flanges spar [m] (without thickness of spar)
+w_sides_spar = 0.04  # Width side flanges spar [m] (without thickness of spar)
 
 # Thickness top sheet as a function of y
 def t_sheet_hor_top(y):
     if y <= 2:        # Inside fuselage, thick structure
-        return 0.01
-    if 1.5 < y <= 0.5*(b/2):
+        return 0.006
+    if 2 < y <= 0.4*(b/2):
         return t_sheet_hor_top_start - y * (t_sheet_hor_top_start - t_sheet_hor_top_middle) / (b / 2)
-    if y > 0.5 * (b / 2):
+    if y > 0.4 * (b / 2):
         return t_sheet_hor_top_middle - y * (t_sheet_hor_top_middle - t_sheet_hor_top_end) / (b / 2)
 
 # Thickness bottom sheet as a function of y
 def t_sheet_hor_bottom(y):
-    if y <= 2:        # Inside fuselage, thick structure
+    if y <= 2.5:        # Inside fuselage, thick structure
         return 0.01
-    if 1.5 < y <= 0.5*(b/2):
+    if 2.5 < y <= 0.6*(b/2):
         return t_sheet_hor_bottom_start - y * (t_sheet_hor_bottom_start - t_sheet_hor_bottom_middle) / (b / 2)
-    if y > 0.5 * (b / 2):
+    if y > 0.6 * (b / 2):
         return t_sheet_hor_bottom_middle - y * (t_sheet_hor_bottom_middle - t_sheet_hor_bottom_end) / (b / 2)
 
 # Thickness spar as a function of y
 def t_sheet_spar(y):
-    if y <= 0.5*(b/2):
+    if y <= 0.45 * (b/2):
         return t_sheet_spar_start - y * (t_sheet_spar_start - t_sheet_spar_middle) / (b / 2)
-    if y > 0.5 * (b/2):
+    if y > 0.45 * (b/2):
         return t_sheet_spar_middle - y * (t_sheet_spar_middle - t_sheet_spar_end) / (b / 2)
 
 def MomentInertiaWingBox(y):
@@ -179,16 +180,6 @@ def MomentInertiaWingBox(y):
                      numberstringerstop(y) * A_str * (h_spar - z_NA_stringer) + w_sheet * t_sheet_hor_top(y) * h_spar) / \
                     (t_sheet_hor_top(y) * w_sheet + t_sheet_hor_bottom(y) * w_sheet + 2 * h_spar * t_sheet_spar(y) +
                      4 * t_sheet_spar(y) * w_sides_spar + (numberstringersbottom(y) + numberstringerstop(y)) * A_str)
-
-    # # Moment of inertia of the wing box
-    # Ixx_wing_box = w_sheet * t_sheet_hor_bottom(y) * z_NA_wing_box ** 2 + w_sheet * t_sheet_hor_top(y) * (
-    #             h_spar - z_NA_wing_box) ** 2 + \
-    #                2 * (1 / 12 * t_sheet_spar(y) * h_spar ** 3 + w_sides_spar * t_sheet_spar(y) * (
-    #             h_spar / 2 - z_NA_wing_box) ** 2) + \
-    #                2 * (w_sides_spar * t_sheet_spar(y) * (h_spar - z_NA_wing_box) ** 2) + \
-    #                2 * (w_sides_spar * t_sheet_spar(y) * (z_NA_wing_box - h_spar) ** 2) + \
-    #                numberstringerstop(y) * (Ixx_stringer + A_str * (h_spar - z_NA_stringer - z_NA_wing_box) ** 2) + \
-    #                numberstringersbottom(y) * (Ixx_stringer + A_str * (z_NA_wing_box - z_NA_stringer) ** 2)
 
     # Moment of inertia of each part
     A_topsheet = w_sheet * t_sheet_hor_top(y)
@@ -211,7 +202,7 @@ def MomentInertiaWingBox(y):
     Ixx_wing_box = Ixx_top_sheet + Ixx_bottom_sheet + 2 * Ixx_spar + Ixx_top_stringers + Ixx_bottom_stringers
 
     return Ixx_wing_box, z_NA_wing_box
-# print(MomentInertiaWingBox(0)[0])
+
 # Cross-sectional area wing box
 def AreaWingBox(y):
     # Dimensions as a function of the span
@@ -235,7 +226,7 @@ def Am(y):
 
     return Am
 
-
+print("y",1.478250 - 0.25 * (b/2) * (1.478250 - 0.442847) / (b / 2))
 # -------------------Lift and moment distribution --------------------------------------------------------------
 
 Ldistr = [14738.69053365474, 14738.833233974943, 14739.261212029445, 14739.974099099943, 14740.971280655951,
@@ -595,7 +586,7 @@ def ds_t(y):
     h_spar = 0.317473 - y * (0.317473 - 0.095107) / (b / 2)
     w_sheet = 1.478250 - y * (1.478250 - 0.442847) / (b / 2)
 
-    ds_t = 2*w_sides_spar/t_sheet_spar(y) + w_sheet/t_sheet_hor_top(y) + w_sheet/t_sheet_hor_bottom(y)
+    ds_t = 2*h_spar/t_sheet_spar(y) + w_sheet/t_sheet_hor_top(y) + w_sheet/t_sheet_hor_bottom(y)
 
     return ds_t
 
@@ -603,13 +594,6 @@ def ds_t(y):
 def J_y(y):
     J = 4 * Am(y) ** 2 / ds_t(y)
     return J
-
-# T_C = sp.interpolate.interp1d(y, J, kind='cubic', fill_value='extrapolate')
-# J_plot = np.array(T_C(y))
-#
-#
-# def J_y(y):
-#     return T_C(y)
 
 # OUTPUT: Torsional constant as a function of y: J_y(y)
 print('J done')
@@ -779,15 +763,15 @@ def sigma_crit(y):
 def sigma_i(y, n):
     sigma_i = abs(M[n] * (height_spar(y) - MomentInertiaWingBox(y)[1]) / MomentInertiaWingBox(y)[0])
     return sigma_i
-print("Comp:",sigma_i(0,0))
-# print("Compressive stress root:", sigma_i(0,0))
+
 # ---------------Bending stress calculations------------------
 
 def sigma_tensile(y, n):
     sigma_i = abs(M[n] * MomentInertiaWingBox(y)[1] / MomentInertiaWingBox(y)[0])
     return sigma_i
 
-# Stress calculations -----------------------------------------------------------------------
+
+# ------------------------ Crack propagation calculations ---------------------------------------------
 
 # Moment as function of y
 y_lst = np.linspace(0, b/2, n_points)
@@ -831,8 +815,8 @@ def m_s_sigma_a_bot(y):
     sigma_a = k1c / math.sqrt(math.pi * cracksize)
     m_s_sigma_a_bot = sigma_a / m_s_bot(y)[1]
     return m_s_sigma_a_bot
-    
-#m_s_sigma_a_bot = sigma_a / sigma_bot
+
+# m_s_sigma_a_bot = sigma_a / sigma_bot
 top_m_s_sigma = []
 bot_m_s_sigma = []
 I = []
@@ -842,14 +826,9 @@ for i in range(n_points):
     bot_m_s_sigma.append(m_s_sigma_a_bot(i*step))
     I.append(MomentInertiaWingBox(i*step)[0])
     z_n.append(MomentInertiaWingBox(i*step)[1])
-    
-plt.plot(y_lst, bot_m_s_sigma, "r")
-plt.plot(y_lst, bot_m_s, "b")
-#plt.plot(y_lst, z_n)
-plt.ylim(0, 5)
-plt.show()
 
 # ---------------------Margins of safety for shear and yield stress, and compression buckling------------------
+
 ShearStressCheck = []
 TensileCheck = []
 CompressiveBucklingCheck = []
@@ -869,6 +848,7 @@ for n in range(n_points):
     margin_safety_sigma_yield = sigma_yield/sigma_tensile(y, n)
     TensileCheck.append(margin_safety_sigma_yield)
 
+
 # --------------Check margins of safety------------------
 ShearStressFailure = 0
 CompressiveBucklingFailure = 0
@@ -877,16 +857,22 @@ CrackFailure = 0
 
 
 for check in range(len(ShearStressCheck)):
+
     if ShearStressCheck[check] < 1:
         ShearStressFailure = 1
+
     if CompressiveBucklingCheck[check] < 1:
         CompressiveBucklingFailure = 1
+
     if TensileCheck[check] < 1:
         YieldStressFailure = 1
+
     if bot_m_s_sigma[check] < 1:
         CrackFailure = 1
 
+
 # Check for any failure
+
 if ShearStressFailure == 1:
     print("Shear stress failure")
 elif ShearStressFailure == 0:
@@ -894,22 +880,27 @@ elif ShearStressFailure == 0:
 
 if CompressiveBucklingFailure == 1:
     print("Compression buckling failure")
-if CompressiveBucklingFailure == 0:
+elif CompressiveBucklingFailure == 0:
     print("Compression buckling OK")
 
 if YieldStressFailure == 1:
     print("Tensile stress failure")
-if YieldStressFailure == 0:
+elif YieldStressFailure == 0:
     print("Tensile stress OK")
 
 if CrackFailure == 1:
     print("Crack stress failure")
-if CrackFailure == 0:
+elif CrackFailure == 0:
     print("Crack stress OK")
 
-print(ShearStressCheck)
-print(CompressiveBucklingCheck)
-print(TensileCheck)
+# print(ShearStressCheck)
+# print(CompressiveBucklingCheck)
+# print(TensileCheck)
+# print(bot_m_s_sigma)
+
+
+# -------------------- Margin of safety plots ----------------------
+plt.style.use("ggplot")
 
 plt.subplot(221)
 plt.plot(ylst, ShearStressCheck)
@@ -927,6 +918,12 @@ plt.subplot(223)
 plt.plot(ylst, TensileCheck)
 plt.ylim(0, 5)
 plt.ylabel("Tensile stress MS")
+plt.xlabel("Span [m]")
+
+plt.subplot(224)
+plt.plot(y_lst, bot_m_s_sigma, "r")
+plt.ylim(0, 5)
+plt.ylabel("Crack propagation MS")
 plt.xlabel("Span [m]")
 
 plt.show()
@@ -957,25 +954,13 @@ for n in range(n_points):
     ytab.append(n)
 
 
-
 plt.subplot(221)
-
 plt.plot(ytab, v)
 
 plt.subplot(222)
-
 plt.plot(ytab, dvdy)
 
-# plt.subplot(224)
-#
-# plt.plot(ytab, I)
-#
-# plt.plot(ytab, I_str)
-
 plt.subplot(223)
-
 plt.plot(ytab, M)
 
-# plt.plot(ytab, M)
-
-plt.show()
+# plt.show()
