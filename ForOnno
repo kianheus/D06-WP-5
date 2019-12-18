@@ -31,12 +31,14 @@ n = 2.5 * 1.5                # Load factor           [-]
 # ---DESIGN CHOICES---
 # --------------------
 
-# Material properties (Al-4047)
-E = 73.1 * 10 ** 9         # E-modulus of material    [Pa]
-G = 27 * 10 ** 9           # G-modulus of material    [Pa]
-rho = 2660                 # Density of material      [kg/m^3]
-sigma_yield = 330 * 10**6   # Yield stress of material [Pa]
-poisson_ratio = 0.33
+# Material properties (Al-2024)
+E = 73.1 * 10 ** 9      # E-modulus of material     [Pa]
+G = 28 * 10 ** 9        # G-modulus of material     [Pa]
+rho = 2780              # Density of material       [kg/m^3]
+poisson_ratio = 0.33    # Poisson ratio of material [-]
+sigma_yield = 330*10**6 # Yield strength            [Pa]
+k1c = 41 * 10**6        # Fracture toughness        [Pa*m^-1/2]
+cracksize = 0.005       # Maximum crack size        [m]
 
 # ---------------Stringers design choices--------------------          [FILLERS]
 ''' To insert stringers on your desired location, you first set the intervals at which
@@ -859,6 +861,69 @@ plt.xlabel("Span [m]")
 
 plt.show()
 
+
+# Stress calculations -----------------------------------------------------------------------
+
+# Moment as function of y
+y_lst = np.linspace(0, b/2, n_points)
+Moment = sp.interpolate.interp1d(y_lst, M, kind='cubic', fill_value='extrapolate')
+
+# Chord as a function of y
+def chord(y):
+    chord = C_r + C_t * (y/(b/2)) - C_r * (y/(b/2))
+    return chord
+
+# Moment induced stress
+def m_s_top(y):
+    z_n = MomentInertiaWingBox(y)[1]
+    z_I = chord(y) * h_frontspar
+    sigma = Moment(y) * (z_I - z_n) / MomentInertiaWingBox(y)[0]
+    m_s = sigma_yield / sigma
+    return m_s, sigma
+
+def m_s_bot(y):
+    z_n = MomentInertiaWingBox(y)[1]
+    sigma = Moment(y) * -(z_n) / MomentInertiaWingBox(y)[0]
+    m_s = sigma_yield / sigma
+    return m_s, sigma
+
+moment = []
+top_m_s = []
+bot_m_s = []
+for i in range(n_points):
+    top_m_s.append(m_s_top(i*step)[0])
+    bot_m_s.append(m_s_bot(i*step)[0])
+    moment.append(Moment(i*step))
+
+# Crack induced stress
+
+def m_s_sigma_a_top(y):
+    sigma_a = k1c / math.sqrt(2 * math.pi * cracksize)
+    m_s_sigma_a_top = sigma_a / m_s_top(y)[1]
+    return m_s_sigma_a_top
+
+def m_s_sigma_a_bot(y):
+    sigma_a = k1c / math.sqrt(2 * math.pi * cracksize)
+    m_s_sigma_a_bot = sigma_a / m_s_bot(y)[1]
+    return m_s_sigma_a_bot
+    
+#m_s_sigma_a_bot = sigma_a / sigma_bot
+top_m_s_sigma = []
+bot_m_s_sigma = []
+I = []
+z_n = []
+for i in range(n_points):
+    top_m_s_sigma.append(m_s_sigma_a_top(i*step))
+    bot_m_s_sigma.append(m_s_sigma_a_bot(i*step))
+    I.append(MomentInertiaWingBox(i*step)[0])
+    z_n.append(MomentInertiaWingBox(i*step)[1])
+    
+plt.plot(y_lst, bot_m_s_sigma, "r")
+plt.plot(y_lst, bot_m_s, "b")
+#plt.plot(y_lst, z_n)
+plt.ylim(0, 5)
+plt.show()
+
 # Statistics --------------------------------------------------------------------------------
 
 
@@ -878,29 +943,6 @@ print('The maximum twist is', round(phi_max, 4), '[deg]')
 
 print("Calculations took %s seconds." % round((time.time() - start_time), 2))
 
-# # Determining the tension side
-#
-# if n > 0:
-#     m_s = m_s_bot
-#
-#     m_s_sigma_a = m_s_sigma_a_bot
-#
-# if n < 0:
-#     m_s = m_s_top
-#
-#     m_s_sigma_a = m_s_sigma_a_top
-#
-# plt.plot(y, m_s, 'b', y, m_s_sigma_a, 'r')
-#
-# plt.ylabel("Margin of safety [-]")
-#
-# plt.xlabel("Span [m]")
-#
-# plt.title("Margin of safety along the wing span")
-#
-# plt.ylim(0, 5)
-#
-# plt.show()
 
 # Rest of the plots
 ytab = []
