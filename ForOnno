@@ -47,7 +47,7 @@ will be 4 stringers located at [0.2, 0.4, 0.6, 0.8] percent of the chord up unti
 of the span. Then until 50% it will look like [0.2, 0.4, 0.8] etc.'''
 
 distance_top = np.array([0.6, 1])  # Interval of stringer variance [%span]
-stringers_top = np.array([[0.1, 0.1], [0.2, 0], [0.3, 0.3], [0.4, 0], [0.5, 0], [0.6, 0], [0.7, 0], [0.8, 0.8], [0.9, 0], [1, 1]])
+stringers_top = np.array([[0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0], [0.5, 0.5], [0.6, 0], [0.7, 0], [0.8, 0.8], [0.9, 0.9], [1, 1]])
 topstr = sp.interpolate.interp1d(distance_top, stringers_top, kind='next', fill_value='extrapolate')
 
 distance_bot = np.array([0.6, 1])  # Interval of stringer variance [%span]
@@ -64,9 +64,9 @@ botstr = sp.interpolate.interp1d(distance_bot, stringers_bot, kind='next', fill_
 #  w_sides_stringer
 
 t_stringer = 0.007          # Thickness stringer [m]
-h_stringer = 0.08           # Height of stringer vertical side (excluding thickness from bottom and top plates) [m]
+h_stringer = 0.05           # Height of stringer vertical side (excluding thickness from bottom and top plates) [m]
 w_sides_stringer = 0.01     # Width of the sides of the stringer [m]
-w_top_side_stringer = 0.06  # Width of the top side of the stringer [m]
+w_top_side_stringer = 0.07  # Width of the top side of the stringer [m]
 
 # Area stringer [m^2]
 A_str = t_stringer * (2 * h_stringer + 2 * w_sides_stringer + w_top_side_stringer) - 4 * t_stringer * t_stringer
@@ -128,28 +128,44 @@ def numberstringersbottom(y):
 # ------------- Moment of inertia ------------------
 
 # Design choices                 [FILLERS]
-t_sheet_spar_start = 0.006         # Spar thickness start [m]
-t_sheet_spar_end   = 0.003         # Spar thickness end   [m]
+t_sheet_spar_start  = 0.006         # Spar thickness start   [m]
+t_sheet_spar_middle = 0.005         # Spar thickness middle  [m]
+t_sheet_spar_end    = 0.003         # Spar thickness end     [m]
 
-t_sheet_hor_top_start = 0.005      # Starting top horizontal sheet thickness [m]
-t_sheet_hor_top_end   = 0.003      # Final top horizontal sheet thickness    [m]
+t_sheet_hor_top_start  = 0.005      # Starting top horizontal sheet thickness  [m]
+t_sheet_hor_top_middle = 0.0045     # Middle top horizontal sheet thickness    [m]
+t_sheet_hor_top_end    = 0.003      # Final top horizontal sheet thickness     [m]
 
-t_sheet_hor_bottom_start = 0.005   # Top horizontal sheet thickness [m]
-t_sheet_hor_bottom_end   = 0.002   # Top horizontal sheet thickness [m]
+t_sheet_hor_bottom_start  = 0.005   # Bottom horizontal sheet thickness start  [m]
+t_sheet_hor_bottom_middle = 0.004   # Bottom horizontal sheet thickness middle [m]
+t_sheet_hor_bottom_end    = 0.002   # Bottom horizontal sheet thickness end    [m]
 
 w_sides_spar = 0.05  # Width side flanges spar [m] (without thickness of spar)
 
 # Thickness top sheet as a function of y
 def t_sheet_hor_top(y):
-    return t_sheet_hor_top_start - y * (t_sheet_hor_top_start - t_sheet_hor_top_end) / (b / 2)
+    if y <= 1.5:        # Inside fuselage, thick structure
+        return 0.01
+    if 1.5 < y <= 0.5*(b/2):
+        return t_sheet_hor_top_start - y * (t_sheet_hor_top_start - t_sheet_hor_top_middle) / (b / 2)
+    if y > 0.5 * (b / 2):
+        return t_sheet_hor_top_middle - y * (t_sheet_hor_top_middle - t_sheet_hor_top_end) / (b / 2)
 
 # Thickness bottom sheet as a function of y
 def t_sheet_hor_bottom(y):
-    return t_sheet_hor_bottom_start - y * (t_sheet_hor_bottom_start - t_sheet_hor_bottom_end) / (b / 2)
+    if y <= 1.5:        # Inside fuselage, thick structure
+        return 0.01
+    if 1.5 < y <= 0.5*(b/2):
+        return t_sheet_hor_bottom_start - y * (t_sheet_hor_bottom_start - t_sheet_hor_bottom_middle) / (b / 2)
+    if y > 0.5 * (b / 2):
+        return t_sheet_hor_bottom_middle - y * (t_sheet_hor_bottom_middle - t_sheet_hor_bottom_end) / (b / 2)
 
 # Thickness spar as a function of y
 def t_sheet_spar(y):
-    return t_sheet_spar_start - y * (t_sheet_spar_start - t_sheet_spar_end) / (b / 2)
+    if y <= 0.5*(b/2):
+        return t_sheet_spar_start - y * (t_sheet_spar_start - t_sheet_spar_middle) / (b / 2)
+    if y > 0.5 * (b/2):
+        return t_sheet_spar_middle - y * (t_sheet_spar_middle - t_sheet_spar_end) / (b / 2)
 
 def MomentInertiaWingBox(y):
     # Dimensions as a function of the span
@@ -162,18 +178,38 @@ def MomentInertiaWingBox(y):
                     (t_sheet_hor_top(y) * w_sheet + t_sheet_hor_bottom(y) * w_sheet + 2 * h_spar * t_sheet_spar(y) +
                      4 * t_sheet_spar(y) * w_sides_spar + (numberstringersbottom(y) + numberstringerstop(y)) * A_str)
 
-    # Moment of inertia of the wing box
-    Ixx_wing_box = w_sheet * t_sheet_hor_bottom(y) * z_NA_wing_box ** 2 + w_sheet * t_sheet_hor_top(y) * (
-                h_spar - z_NA_wing_box) ** 2 + \
-                   2 * (1 / 12 * t_sheet_spar(y) * h_spar ** 3 + w_sides_spar * t_sheet_spar(y) * (
-                h_spar / 2 - z_NA_wing_box) ** 2) + \
-                   2 * (w_sides_spar * t_sheet_spar(y) * (h_spar - z_NA_wing_box) ** 2) + \
-                   2 * (w_sides_spar * t_sheet_spar(y) * (z_NA_wing_box - h_spar) ** 2) + \
-                   numberstringerstop(y) * (Ixx_stringer + A_str * (h_spar - z_NA_stringer - z_NA_wing_box) ** 2) + \
-                   numberstringersbottom(y) * (Ixx_stringer + A_str * (z_NA_wing_box - z_NA_stringer) ** 2)
+    # # Moment of inertia of the wing box
+    # Ixx_wing_box = w_sheet * t_sheet_hor_bottom(y) * z_NA_wing_box ** 2 + w_sheet * t_sheet_hor_top(y) * (
+    #             h_spar - z_NA_wing_box) ** 2 + \
+    #                2 * (1 / 12 * t_sheet_spar(y) * h_spar ** 3 + w_sides_spar * t_sheet_spar(y) * (
+    #             h_spar / 2 - z_NA_wing_box) ** 2) + \
+    #                2 * (w_sides_spar * t_sheet_spar(y) * (h_spar - z_NA_wing_box) ** 2) + \
+    #                2 * (w_sides_spar * t_sheet_spar(y) * (z_NA_wing_box - h_spar) ** 2) + \
+    #                numberstringerstop(y) * (Ixx_stringer + A_str * (h_spar - z_NA_stringer - z_NA_wing_box) ** 2) + \
+    #                numberstringersbottom(y) * (Ixx_stringer + A_str * (z_NA_wing_box - z_NA_stringer) ** 2)
+
+    # Moment of inertia of each part
+    A_topsheet = w_sheet * t_sheet_hor_top(y)
+    Ixx_top_sheet = 1 / 12 * w_sheet * t_sheet_hor_top(y) ** 3 + A_topsheet * (h_spar - z_NA_wing_box) ** 2
+
+    A_botsheet = w_sheet * t_sheet_hor_bottom(y)
+    Ixx_bottom_sheet = 1 / 12 * w_sheet * t_sheet_hor_bottom(y) ** 3 + A_botsheet * z_NA_wing_box ** 2
+
+    A_spar = h_spar * t_sheet_spar(y)
+    A_side_spar = 2 * w_sides_spar * t_sheet_spar(y)
+    Ixx_mainspar = 1 / 12 * t_sheet_spar(y) * h_spar ** 3 + A_spar * abs(h_spar - z_NA_wing_box) ** 2
+    Ixx_sidespar_top = 1 / 12 * w_sides_spar * t_sheet_spar(y) ** 3 + A_side_spar * (h_spar - z_NA_wing_box) ** 2
+    Ixx_sidespar_bot = 1 / 12 * w_sides_spar * t_sheet_spar(y) ** 3 + A_side_spar * z_NA_wing_box ** 2
+    Ixx_spar = Ixx_mainspar + Ixx_sidespar_top + Ixx_sidespar_bot
+
+    Ixx_top_stringers = numberstringerstop(y) * (Ixx_stringer + A_str * (h_spar - z_NA_wing_box - z_NA_stringer) ** 2)
+    Ixx_bottom_stringers = numberstringersbottom(y) * (Ixx_stringer + A_str * (z_NA_wing_box - z_NA_stringer) ** 2)
+
+    # Total moment of inertia of the wing box
+    Ixx_wing_box = Ixx_top_sheet + Ixx_bottom_sheet + 2 * Ixx_spar + Ixx_top_stringers + Ixx_bottom_stringers
 
     return Ixx_wing_box, z_NA_wing_box
-
+# print(MomentInertiaWingBox(0)[0])
 # Cross-sectional area wing box
 def AreaWingBox(y):
     # Dimensions as a function of the span
@@ -741,8 +777,8 @@ def sigma_crit(y):
 def sigma_i(y, n):
     sigma_i = abs(M[n] * (height_spar(y) - MomentInertiaWingBox(y)[1]) / MomentInertiaWingBox(y)[0])
     return sigma_i
-
-print("Compressive stress root:", sigma_i(0,0))
+print("Comp:",sigma_i(0,0))
+# print("Compressive stress root:", sigma_i(0,0))
 # ---------------Bending stress calculations------------------
 
 def sigma_tensile(y, n):
@@ -787,7 +823,7 @@ for check in range(len(ShearStressCheck)):
 if ShearStressFailure == 1:
     print("Shear stress failure")
 elif ShearStressFailure == 0:
-    print("Shear strees OK")
+    print("Shear stress OK")
 
 if CompressiveBucklingFailure == 1:
     print("Compression buckling failure")
