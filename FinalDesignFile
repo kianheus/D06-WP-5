@@ -826,6 +826,22 @@ for i in range(n_points):
     bot_m_s_sigma.append(m_s_sigma_a_bot(i*step))
     I.append(MomentInertiaWingBox(i*step)[0])
     z_n.append(MomentInertiaWingBox(i*step)[1])
+    
+# Column buckling
+
+margin_safety_column_bucklng = []
+
+for stringer_length in distance_top:
+    L = stringer_length * (b/2)
+    n = int(L * n_points / (b / 2))       # Convert to point along span for moment list
+
+    ColumnBuckling = math.pi**2 * E * Ixx_stringer / (4 * L**2)
+    bending_stress = sigma_tensile(L, n)
+
+    margin_safety_column_bucklng.append(bending_stress/ColumnBuckling)
+
+print("Margin of safety for column buckling:", margin_safety_column_bucklng)
+
 
 # ---------------------Margins of safety for shear and yield stress, and compression buckling------------------
 
