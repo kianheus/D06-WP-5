@@ -573,11 +573,6 @@ def getTorsionDistribution(Ldistr, M_distr, rho, V, T, loadfactor):
     return torsion_int_distr
 
 
-# ------------------Calculating the wing box mass -------------------------------------------------------------
-
-# Wing box mass (2 * mass of half wing)
-Mass_wingbox = 2 * rho * sp.integrate.quad(AreaWingBox,0,b/2)[0]
-
 # ---------------------Calculating the torsional constant --------------------------------------------------------
 
 # Integral of the reciprocal of t and length
@@ -704,6 +699,18 @@ ai_ribs = 0.6    # [m]
 
 # Number of ribs
 n_rectangles = round((b/2)/ai_ribs)
+
+# Number and geometry of ribs
+n_ribs = n_rectangles + 1
+rib_thickness = 0.001   # Rib thickness [m]
+
+totalribvolume = []
+
+for rib in range(n_ribs):
+    y_rib = rib * 0.6
+
+    V_rib = Am(y_rib) * rib_thickness
+    totalribvolume.append(V_rib)
 
 # a/b ratio
 def height_spar(y):
@@ -927,6 +934,11 @@ plt.ylabel("Crack propagation MS")
 plt.xlabel("Span [m]")
 
 plt.show()
+
+# ------------------Calculating the wing box mass -------------------------------------------------------------
+
+# Wing box mass (2 * mass of half wing)
+Mass_wingbox = 2 * rho * sp.integrate.quad(AreaWingBox,0,b/2)[0] + sum(totalribvolume) * rho
 
 # Statistics --------------------------------------------------------------------------------
 
