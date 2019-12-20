@@ -833,6 +833,28 @@ for i in range(n_points):
     bot_m_s_sigma.append(m_s_sigma_a_bot(i*step))
     I.append(MomentInertiaWingBox(i*step)[0])
     z_n.append(MomentInertiaWingBox(i*step)[1])
+    
+# Column buckling
+
+margin_safety_column_buckling = []
+ylst = []
+L = 0.6
+for n in range(n_points):
+    y = n * (b / 2) / n_points
+    ylst.append(y)
+
+    ColumnBuckling = 4 * math.pi**2 * E * Ixx_stringer / (L**2 * A_str)    # Critical column buckling
+
+    bending_stress = abs(M[n] * (height_spar(y) - MomentInertiaWingBox(y)[1] - z_NA_stringer) / MomentInertiaWingBox(y)[0])
+
+    margin_safety_column_buckling.append(ColumnBuckling/bending_stress)
+
+print("Minimum margin of safety for column buckling:", min(margin_safety_column_buckling))
+plt.plot(ylst, margin_safety_column_buckling)
+plt.ylim(0, 100)
+plt.ylabel("Column buckling MoS")
+plt.xlabel("Span [m]")
+plt.show()
 
 # ---------------------Margins of safety for shear and yield stress, and compression buckling------------------
 
